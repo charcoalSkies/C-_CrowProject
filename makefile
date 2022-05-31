@@ -26,6 +26,6 @@ $(EXE) : $(OBJ)
 	
 
 clean:
-	rm $(EXE).o
+	rm *.o
 
 
