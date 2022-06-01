@@ -22,16 +22,22 @@ int main()
 
     CROW_ROUTE(app, "/").methods("POST"_method)([](const crow::request& req)
     {
+        std::string rsaEncrypted, aesEncrypted, pinId, readData;
+
         auto getJson = crow::json::load(req.body);
         if(!getJson)
             return crow::response(400);
 
-        Function test = Function();
+        Function* function = new Function();
 
-        string result = test.requestParser(getJson);
+        std::tie(rsaEncrypted, aesEncrypted, pinId) = function->requestParser(getJson);
+
+        readData = function->decryptData(rsaEncrypted, aesEncrypted);
 
         std::ostringstream os;
-        os << result;
+        os << readData;
+        
+        delete function;
         return crow::response{os.str()};
     });
 
