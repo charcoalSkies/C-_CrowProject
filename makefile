@@ -6,7 +6,7 @@ CC=$(CORSS)g++
 EXE=main
 
 DEFINES= 
-LDFLAGS = -L /usr/lib -lboost_system -lboost_thread -lpthread
+LDFLAGS = -L /usr/lib -lboost_system -lboost_thread -lpthread -lcrypto
 CFLAGSXX= -g -I./include $(DEFINES)
 
 C_SRC=$(wildcard *.c)
@@ -23,7 +23,6 @@ all : $(EXE)
 $(EXE) : $(OBJ)
 	$(CC) $(CFLAGSXX) -o $@ $^ $(LDFLAGS)
 	strip $@
-	
 
 clean:
 	rm *.o
