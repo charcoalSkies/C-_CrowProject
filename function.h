@@ -24,63 +24,32 @@ public:
         return {rsaEncrypted, aesEncrypted, pinId};
     }
 
-    RSA* createRSA(unsigned char* key, int p_public)
-    { 
-        RSA *rsa= NULL;
-        BIO *keybio ;
-        keybio = BIO_new_mem_buf(key, -1); // 읽기 전용 메모리 만들기 BIO 
-        
-        if (keybio==NULL)
-        {
-            printf( "Failed to create key BIO");
-            return 0;
-        } 
-        
-        /* PEM형식인 키 파일을 읽어와서 RSA 구조체 형식으로 변환 */
-        if(p_public) // PEM public 키로 RSA 생성    
-        { 
-            rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
-        }
-        else // PEM private 키로 RSA 생성    
-        {
-            rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa, NULL, NULL);
-        }
-        
-        if(rsa == NULL)
-        {
-            printf( "Failed to create RSA");
-        }
-        
-        return rsa;    
-    }
-    
-    int private_decrypt(unsigned char * enc_data,int data_len, unsigned char * k_key, unsigned char *decrypted)
+    int decryptRsaWithPrivateKey(unsigned char* inData, int inLen, unsigned char* outData)
     {
-        RSA * rsa = createRSA(k_key,0);
-        int  result = RSA_private_decrypt(data_len,enc_data,decrypted,rsa,padding);
-        return result;
+        std::ifstream file("private.pem");
+        std::stringstream privateKey;
+        privateKey << file.rdbuf();
+        std::string privateKeyData = privateKey.str();
+        char privateKeyText[strlen(privateKeyData.c_str())]; 
+        strcpy(privateKeyText, privateKeyData.c_str());
+        BIO* bio = BIO_new_mem_buf(privateKeyText, -1);
+
+        RSA* rsaPrivateKey = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
+
+        BIO_free(bio);
+
+        int len = RSA_private_decrypt(inLen, (const unsigned char*)inData, outData, rsaPrivateKey, RSA_PKCS1_OAEP_PADDING);
+
+        return len;
     }
 
-    string decryptData(string rsaEncrypted, string aesEncrypted)
+    string decryptData(string rsaEncryptedstr, string aesEncrypted)
     {
-        ifstream file("certificate/private.pem");
-        stringstream readPrivateKey;
-        readPrivateKey << file.rdbuf();
-
-        unsigned char decrypted[4098]={}; // 복호화한 결과를 저장할 공간 
-
-        unsigned char decrypted[4098]={};
-        int decrypted_length = private_decrypt(encrypted,encrypted_length,privateKey, decrypted);
-
-        if(decrypted_length == -1)  // RSA_private_decrypt() returns -1 on error    
-        { 
-            printLastError("Private Decrypt failed ");
-            exit(0);
-        }
+        char decData[512] = { 0, };
+        char rsaEncrypted[strlen(rsaEncryptedstr.c_str())];
+        strcpy(rsaEncrypted, rsaEncryptedstr.c_str());
+        int len = decryptRsaWithPrivateKey((unsigned char *)rsaEncrypted, strlen(rsaEncrypted), (unsigned char *)decData);
         
-        printf("Decrypted Text = %s\n",decrypted);
-
-
-        return privateKey.str();
+        printf("dec : %s\n", decData);
     }
 };
